@@ -82,7 +82,7 @@ class RoboticArmEnvV0(gym.Env):
         self.phi2 = np.clip(self.phi2, -np.pi / 2, np.pi / 2)
         self.state = np.array([self.theta0, self.phi0, self.theta1, self.phi1, self.theta2, self.phi2, self.dest.x, self.dest.y, self.dest.z])
 
-        # RENDER Robotic Arm
+        # Calculate Robotic Arm Positions
         cube_centers = []
         m = glm.mul(glm.rotate(self.theta0, (0, 1, 0)), glm.rotate(-glm.pi() / 2, (0, 0, 1)))
         cube_centers.append(m * glm.vec4(0, 0, 0, 1))
