@@ -10,7 +10,7 @@ import random
 
 
 class RoboticArmEnvV0(gym.Env):
-    def __init__(self):
+    def __init__(self, render=True):
         super().__init__()
         # Sim Parameters
         self.arm_length = 5
@@ -20,15 +20,17 @@ class RoboticArmEnvV0(gym.Env):
         reach_dist = self.num_arms * self.arm_length
         self.action_space = gym.spaces.Discrete(13)
         self.observation_space = gym.spaces.Box(np.array([0.0, -0.5*np.pi, 0.0, -0.5*np.pi, 0.0, -0.5*np.pi, -reach_dist, -reach_dist, -reach_dist]), np.array([2*np.pi, 0.5*np.pi, 2*np.pi, 0.5*np.pi, 2*np.pi, 0.5*np.pi, reach_dist, reach_dist, reach_dist]), dtype=np.float32)
-        self.state = np.array([0.0, 0.0, 0.0, 0.0, 0.0])
+        # self.state = np.array([0.0, 0.0, 0.0, 0.0, 0.0])
+        self.state = np.zeros(9)
         # renderer init
-        pygame.init()
-        display = (800, 600)
-        pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
-        gluPerspective(45, (display[0] / display[1]), 0.1, 50.0)
-        glTranslatef(0.0, 0, -45)
-        # glTranslatef(0.0, 0, -25)
-        # glRotatef(90, 1, 0, 0)
+        if render: # prevent UI from getting stuck during training
+            pygame.init()
+            display = (800, 600)
+            pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
+            gluPerspective(45, (display[0] / display[1]), 0.1, 50.0)
+            glTranslatef(0.0, 0, -45)
+            # glTranslatef(0.0, 0, -25)
+            # glRotatef(90, 1, 0, 0)
 
         # state init
         self.done = False
@@ -38,7 +40,12 @@ class RoboticArmEnvV0(gym.Env):
         self.phi1 = 0 # [pi/2, pi/2]
         self.theta2 = np.pi # [0.0, 2pi]
         self.phi2 = 0 # [pi/2, pi/2]
-        self.dest = glm.vec3(0.0, 0.0, 0.0)
+        destination_x = random.random()
+        destination_y = random.random()
+        destination_z = random.random()
+        self.dest = glm.vec3(destination_x, destination_y, destination_z)
+        self.dest = glm.normalize(self.dest)
+        self.dest = (random.random() * self.num_arms) * self.arm_length * self.dest
 
         # Obstacles
         self.obstacles = [
