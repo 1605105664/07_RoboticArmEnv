@@ -9,7 +9,7 @@ from OpenGL.GLU import *
 import random
 
 
-class RoboticArmEnvV0(gym.Env):
+class RoboticArmEnv_3Arms_V0(gym.Env):
     def __init__(self, render=True):
         super().__init__()
         # Sim Parameters
@@ -17,9 +17,9 @@ class RoboticArmEnvV0(gym.Env):
         self.arm_width = 0.25
         self.num_arms = 3
         # gym init
-        reach_dist = self.num_arms * self.arm_length
+        reach_dist = 2 * self.arm_length # self.num_arms * self.arm_length
         self.action_space = gym.spaces.Discrete(13)
-        self.observation_space = gym.spaces.Box(np.array([0.0, -0.5*np.pi, 0.0, -0.5*np.pi, 0.0, -0.5*np.pi, -reach_dist, -reach_dist, -reach_dist]), np.array([2*np.pi, 0.5*np.pi, 2*np.pi, 0.5*np.pi, 2*np.pi, 0.5*np.pi, reach_dist, reach_dist, reach_dist]), dtype=np.float32)
+        self.observation_space = gym.spaces.Box(np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -reach_dist, -reach_dist, -reach_dist]), np.array([2*np.pi, np.pi, 2*np.pi, np.pi, 2*np.pi, np.pi, reach_dist, reach_dist, reach_dist]), dtype=np.float32)
         # self.state = np.array([0.0, 0.0, 0.0, 0.0, 0.0])
         self.state = np.zeros(9)
         # renderer init
@@ -56,7 +56,7 @@ class RoboticArmEnvV0(gym.Env):
 
     def step(self, action):
         # TAKE ACTION
-        increment = 0.4
+        increment = 0.2
         if action == 1:
             self.theta0 += increment
         elif action == 2:
@@ -82,11 +82,11 @@ class RoboticArmEnvV0(gym.Env):
         elif action == 12:
             self.phi2 -= increment
         self.theta0 = np.clip(self.theta0, 0, np.pi * 2)
-        self.phi0 = np.clip(self.phi0, -np.pi / 2, np.pi / 2)
+        self.phi0 = np.clip(self.phi0, 0.0, np.pi)
         self.theta1 = np.clip(self.theta1, 0, np.pi * 2)
-        self.phi1 = np.clip(self.phi1, -np.pi / 2, np.pi / 2)
+        self.phi1 = np.clip(self.phi1, 0.0, np.pi)
         self.theta2 = np.clip(self.theta2, 0, np.pi * 2)
-        self.phi2 = np.clip(self.phi2, -np.pi / 2, np.pi / 2)
+        self.phi2 = np.clip(self.phi2, 0.0, np.pi)
         self.state = np.array([self.theta0, self.phi0, self.theta1, self.phi1, self.theta2, self.phi2, self.dest.x, self.dest.y, self.dest.z])
 
         # Calculate Robotic Arm Positions
@@ -117,7 +117,7 @@ class RoboticArmEnvV0(gym.Env):
 
 
         # CALCULATE REWARD
-        hit_destination = self.checkSphereCollision(glm.vec3(end_effector), self.arm_width, self.dest, 2)
+        hit_destination = self.checkSphereCollision(glm.vec3(end_effector), self.arm_width, self.dest, 4)
         if collision_detected:
             reward = -10000
             done = True
@@ -125,7 +125,7 @@ class RoboticArmEnvV0(gym.Env):
             reward = 10000
             done = True
         else:
-            reward = -(glm.length2(end_effector - self.dest))
+            reward = -50 * (glm.length2(end_effector - self.dest))
             done = False
 
         info = {"End Effector":end_effector}
@@ -134,11 +134,11 @@ class RoboticArmEnvV0(gym.Env):
     def reset(self, seed=None, options=None):
         self.done = False
         self.theta0 = np.pi # [0.0, 2pi]
-        self.phi0 = 0 # [-pi/2, pi/2]
+        self.phi0 = np.pi / 2 # [-pi/2, pi/2]
         self.theta1 = np.pi # [0.0, 2pi]
-        self.phi1 = 0 # [-pi/2, pi/2]
+        self.phi1 = np.pi / 2 # [-pi/2, pi/2]
         self.theta2 = np.pi # [0.0, 2pi]
-        self.phi2 = 0 # [-pi/2, pi/2]
+        self.phi2 = np.pi / 2 # [-pi/2, pi/2]
 
         # a random location on the surface of the sphere
         destination_x = random.random()
@@ -270,7 +270,3 @@ class RoboticArmEnvV0(gym.Env):
 
     def checkSphereCollision(self, p1, r1, p2, r2):
         return glm.length2(p2 - p1) < r1 + r2
-
-
-if __name__ == '__main__':
-    print("Hello World")
