@@ -1,24 +1,51 @@
+import gym
+from gym.envs.registration import register
+from stable_baselines3 import *
+from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.env_checker import check_env
-import RoboticArmEnv_3Arms as RAE3
 
-env = RAE3.RoboticArmEnv_3Arms_V0()
+import RoboticArmEnv as RAE
+import time
+
+#number of arm segments
+N_ARMS=2
+register(
+    id="RoboticArmEnv-v1",
+    entry_point=RAE.RoboticArmEnv_V1,
+    max_episode_steps=500,
+    kwargs={'num_arms': N_ARMS}
+)
+
+# Parallel environments
+env = make_vec_env("RoboticArmEnv-v1", n_envs=8)
 
 # It will check your custom environment and output additional warnings if needed
-check_env(env)
+# check_env(env)
 
+# model = A2C("MlpPolicy", env, verbose=2)
+# model.learn(total_timesteps=1000000)
+# model.save("a2c")
 
-episodes = 10
+model = PPO("MlpPolicy", env, verbose=2)
+model.learn(total_timesteps=1000000)
+model.save("ppo")
 
+del model # remove to demonstrate saving and loading
+
+# model = A2C.load("a2c")
+model = PPO.load("ppo")
+
+episodes = 100
+env = RAE.RoboticArmEnv_V0(num_arms=N_ARMS)
 for episode in range(episodes):
     done = False
     obs = env.reset()
-    reward_epi = 0
+    cumReward = 0
     while not done:
-        random_action = env.action_space.sample()
-        # print("action",random_action)
-        obs, reward, done, info = env.step(random_action)
+        action, _states = model.predict(obs)
+        obs, reward, done, info = env.step(action)
+        # print('obs',obs,'reward', reward)
+        cumReward+=reward
         env.render()
-        reward_epi += reward
-        # print(info.get("End Effector"))
-    print('reward',reward_epi)
-
+        time.sleep(0.05) #slow down the animation
+    print('Reward:', cumReward)
