@@ -36,7 +36,7 @@ del model # remove to demonstrate saving and loading
 model = PPO.load("ppo")
 
 episodes = 100
-env = RAE.RoboticArmEnv_V0(num_arms=N_ARMS)
+env = RAE.RoboticArmEnv_V1(num_arms=N_ARMS)
 for episode in range(episodes):
     done = False
     obs = env.reset()
