@@ -18,7 +18,7 @@ def bound(num):
 
 
 class RoboticArmEnv_V1(gym.Env):
-    def __init__(self, training=True, num_arms=1, arm_length=5, arm_width=0.25, destSize=2, increment=0.1):
+    def __init__(self, training=True, num_arms=1, arm_length=10, arm_width=0.5, destSize=2, increment=0.1):
         super().__init__()
         # Sim Parameters
         self.arm_length = arm_length
@@ -88,21 +88,10 @@ class RoboticArmEnv_V1(gym.Env):
                     for j2 in range(len(centers2) - 1):
                         box1_robot2 = glm.vec3(centers2[j2].x, centers2[j2].y, centers2[j2].z)
                         box2_robot2 = glm.vec3(centers2[j2 + 1].x, centers2[j2 + 1].y, centers2[j2 + 1].z)
-                        for a in np.arange(0.1, 1.0, 0.1):
-                            arm_sphere1 = a * box1_robot1 + (1 - a) * box2_robot1
-                            for b in np.arange(0.1, 1.0, 0.1):
-                                # print("c1: ", c1, ", c2: ", c2, ", j1: ", j1, ", j2: ", j2, ", a: ", a, ", b: ", b)
-                                arm_sphere2 = b * box1_robot2 + (1 - b) * box2_robot2
-                                collision_detected = collision_detected or self.checkSphereCollision(arm_sphere1, self.arm_width*2, arm_sphere2, self.arm_width*2)
+                        dist = self.closestDistanceBetweenLines(box1_robot1, box2_robot1, box1_robot2, box2_robot2)
+                        if dist < self.arm_width*2.0:
+                            collision_detected = True
 
-        # for c in range(len(cube_centers) - 1):
-        #     for a in np.arange(0.0, 1.0, 0.1):
-        #         for obstacle in self.obstacles:
-        #             box1 = glm.vec3(cube_centers[c].x, cube_centers[c].y, cube_centers[c].z)
-        #             box2 = glm.vec3(cube_centers[c + 1].x, cube_centers[c + 1].y, cube_centers[c + 1].z)
-        #             b = 1 - a
-        #             arm_sphere = (a * box1.x + b * box2.x, a * box1.y + b * box2.y, a * box1.z + b * box2.z)
-        #             collision_detected = collision_detected or self.checkSphereCollision(arm_sphere, self.arm_width, obstacle[0], obstacle[1])
 
         # self.dist2Dest = (glm.length(self.dest - end_effector))
         self.state = np.concatenate((self.theta, self.phi, self.dest))
@@ -164,7 +153,8 @@ class RoboticArmEnv_V1(gym.Env):
 
         self.render_init()
 
-        glRotatef(-1.0, 0, 1, 0)
+        # Uncomment to rotate the scene
+        # glRotatef(-1.0, 0, 1, 0)
 
         # RENDER Robotic Arm
         for event in pygame.event.get():
@@ -206,6 +196,9 @@ class RoboticArmEnv_V1(gym.Env):
         glColor((1, 1, 0))
         for d in range(self.num_robots):
             self.RenderSphere((self.dest[d:d+3], self.destSize))
+
+        for d in range(self.num_robots):
+            self.RenderLine(end_effectors[d], self.dest[d:d+3])
 
         # RENDER OBSTACLES
         # for obstacle in self.obstacles:
@@ -283,6 +276,16 @@ class RoboticArmEnv_V1(gym.Env):
                 glVertex3fv(v_)
         glEnd()
 
+    def RenderLine(self, a0, a1):
+        a0 = np.array(a0)
+        a1 = np.array(a1)
+        dist = np.sqrt(np.sum(np.square(a1 - a0))) / self.arm_length / self.num_arms / 2
+        glColor((dist, 1-dist, 0))
+        glBegin(GL_LINES)
+        glVertex3fv(a0)
+        glVertex3fv(a1)
+        glEnd()
+
     def RenderSphere(self, obstacle):
         glPushMatrix()
         glTranslatef(obstacle[0][0], obstacle[0][1], obstacle[0][2])  # Move to the place
@@ -293,3 +296,93 @@ class RoboticArmEnv_V1(gym.Env):
 
     def checkSphereCollision(self, p1, r1, p2, r2):
         return glm.length(p2 - p1) < r1 + r2
+
+    ############
+    # Finding the closest distance between two line segments (used in the collision calculation) uses a solution
+    # posted to stack overflow. This is a minor part of the assignment and replacing our collision detection with
+    # this solution sped up our training by a lot.
+    # https://stackoverflow.com/questions/2824478/shortest-distance-between-two-line-segments
+    # The solution found on stack overflow has been modified (simplified) to better match our use case.
+    #############
+    def closestDistanceBetweenLines(self, a0, a1, b0, b1):
+        ''' Given two lines defined by numpy.array pairs (a0,a1,b0,b1)
+            Return the closest points on each segment and their distance
+        '''
+
+        # Calculate denomitator
+        A = a1 - a0
+        B = b1 - b0
+        magA = np.linalg.norm(A)
+        magB = np.linalg.norm(B)
+
+        _A = A / magA
+        _B = B / magB
+
+        cross = np.cross(_A, _B)
+        denom = np.linalg.norm(cross) ** 2
+
+        # If lines are parallel (denom=0) test if lines overlap.
+        # If they don't overlap then there is a closest point solution.
+        # If they do overlap, there are infinite closest positions, but there is a closest distance
+        if not denom:
+            d0 = np.dot(_A, (b0 - a0))
+
+            # Overlap only possible with clamping
+            d1 = np.dot(_A, (b1 - a0))
+
+            # Is segment B before A?
+            if d0 <= 0 >= d1:
+                if np.absolute(d0) < np.absolute(d1):
+                    return a0, b0, np.linalg.norm(a0 - b0)
+                return np.linalg.norm(a0 - b1)
+
+            # Is segment B after A?
+            elif d0 >= magA <= d1:
+                if np.absolute(d0) < np.absolute(d1):
+                    return a1, b0, np.linalg.norm(a1 - b0)
+                return np.linalg.norm(a1 - b1)
+
+            # Segments overlap, return distance between parallel segments
+            return np.linalg.norm(((d0 * _A) + a0) - b0)
+
+        # Lines criss-cross: Calculate the projected closest points
+        t = (b0 - a0)
+        detA = np.linalg.det([t, _B, cross])
+        detB = np.linalg.det([t, _A, cross])
+
+        t0 = detA / denom
+        t1 = detB / denom
+
+        pA = a0 + (_A * t0)  # Projected closest point on segment A
+        pB = b0 + (_B * t1)  # Projected closest point on segment B
+
+        # Clamp projections
+        if t0 < 0:
+            pA = a0
+        elif t0 > magA:
+            pA = a1
+
+        if t1 < 0:
+            pB = b0
+        elif t1 > magB:
+            pB = b1
+
+        # Clamp projection A
+        if (t0 < 0) or (t0 > magA):
+            dot = np.dot(_B, (pA - b0))
+            if dot < 0:
+                dot = 0
+            elif dot > magB:
+                dot = magB
+            pB = b0 + (_B * dot)
+
+        # Clamp projection B
+        if (t1 < 0) or (t1 > magB):
+            dot = np.dot(_A, (pB - a0))
+            if dot < 0:
+                dot = 0
+            elif dot > magA:
+                dot = magA
+            pA = a0 + (_A * dot)
+
+        return np.linalg.norm(pA - pB)
