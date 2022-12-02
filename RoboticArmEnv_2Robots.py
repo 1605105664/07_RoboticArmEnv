@@ -18,7 +18,7 @@ def bound(num):
 
 
 class RoboticArmEnv_V1(gym.Env):
-    def __init__(self, training=True, num_arms=1, arm_length=10, arm_width=0.5, destSize=2, increment=0.1):
+    def __init__(self, training=True, num_arms=1, arm_length=10, arm_width=0.5, destSize=2, increment=0.1, alpha_reward=1.0):
         super().__init__()
         # Sim Parameters
         self.arm_length = arm_length
@@ -28,6 +28,9 @@ class RoboticArmEnv_V1(gym.Env):
         self.robot_roots = [glm.vec3(0.0, self.arm_length, 0.0), glm.vec3(0.0, -self.arm_length, 0.0)]
         self.destSize = destSize
         self.increment = increment
+
+        self.alpha_reward = alpha_reward
+        self.first_time_hit = np.array([False]*self.num_robots,dtype=bool)
 
         # gym init
         reach_dist = self.arm_length
@@ -98,11 +101,13 @@ class RoboticArmEnv_V1(gym.Env):
         # CALCULATE REWARD
         robot_1_hit_destination = self.checkSphereCollision(glm.vec3(end_effectors[0]), self.arm_width, self.dest[0], self.destSize)
         robot_2_hit_destination = self.checkSphereCollision(glm.vec3(end_effectors[1]), self.arm_width, self.dest[1], self.destSize)
+
+        # general Rewards
         if collision_detected:
             reward = -10000
             done = True
         elif robot_1_hit_destination and robot_2_hit_destination:
-            reward = 1000
+            reward = 1000 * self.alpha_reward
             done = True
         elif robot_1_hit_destination:
             reward = -1
@@ -113,6 +118,14 @@ class RoboticArmEnv_V1(gym.Env):
         else:
             reward = -2
             done = False
+
+        # Give a reward when the robot reaches the destination even if the other robot isn't there yet
+        if(robot_1_hit_destination and not self.first_time_hit[0]):
+            reward += (1 - self.alpha_reward) / self.num_robots * 1000
+            self.first_time_hit[0] = True
+        if(robot_2_hit_destination and not self.first_time_hit[1]):
+            reward += (1 - self.alpha_reward) / self.num_robots * 1000
+            self.first_time_hit[1] = True
 
         info = {"End Effector": end_effectors}
         return self.state, reward, done, info
