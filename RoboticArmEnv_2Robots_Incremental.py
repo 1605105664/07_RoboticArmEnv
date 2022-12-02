@@ -7,7 +7,7 @@ from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
 import random
-
+import time
 
 def bound(num):
     if num < 0:
@@ -18,7 +18,7 @@ def bound(num):
 
 
 class RoboticArmEnv_V1(gym.Env):
-    def __init__(self, training=True, num_arms=2, arm_length=10, arm_width=0.5, destSize=2, increment=0.1, alpha_reward=1.0):
+    def __init__(self, training=True, num_arms=2, arm_length=10, arm_width=0.5, destSize=10, increment=0.1, alpha_reward=0.25):
         super().__init__()
         # Sim Parameters
         self.arm_length = arm_length
@@ -27,17 +27,27 @@ class RoboticArmEnv_V1(gym.Env):
         self.num_robots = 2
         self.robot_roots = [glm.vec3(0.0, self.arm_length, 0.0), glm.vec3(0.0, -self.arm_length, 0.0)]
         self.destSize = destSize
-        self.increment = increment
+        self.increment = np.pi / 12.0
+        self.num_increments = round(np.pi * 2 / self.increment)
+        self.total_correct_reward = 10000
 
         self.alpha_reward = alpha_reward
         self.first_time_hit = np.array([False]*self.num_robots,dtype=bool)
+
+        self.num_increments_dest = 20
+        self.incremental_destSize = 0.5
+        self.destSizes = np.array(np.arange(self.destSize - self.incremental_destSize + self.incremental_destSize * self.num_increments_dest, self.destSize - self.incremental_destSize, -self.incremental_destSize),dtype=float)
+        # print(self.destSizes[4])
+        # print(self.destSizes)
+        self.destSizeIndex = np.array([0]*self.num_robots, dtype=int)
 
         # gym init
         reach_dist = self.arm_length
         self.action_space = gym.spaces.Discrete(4*self.num_robots*self.num_arms)
         # num_arms*[self.theta, self.phi], self.dest.x, self.dest.y, self.dest.z])
-        self.observation_space = gym.spaces.Box(np.array(2*self.num_robots*self.num_arms*[0]+3*self.num_robots*[-reach_dist]),
-                                                np.array(2*self.num_robots*self.num_arms*[2*np.pi]+3*self.num_robots*[reach_dist]), dtype=np.float32)
+        self.observation_space = gym.spaces.Tuple(tuple(self.num_robots * self.num_arms * 2 * [gym.spaces.Discrete(self.num_increments)]) +
+                                                   tuple([gym.spaces.Box(np.array(3*self.num_robots*[-reach_dist*3]), np.array(3*self.num_robots*[reach_dist*3]), dtype=np.float32)]))
+        print(self.observation_space)
         self.rendered = False
         self.training = training
 
@@ -49,6 +59,7 @@ class RoboticArmEnv_V1(gym.Env):
             # (glm.vec3(5, 0, 0), 2)
         ]
         self.name = "RobotArmEnv"
+        random.seed(time.time())
 
     def step(self, action):
         if action < self.num_arms * self.num_robots:
@@ -95,19 +106,22 @@ class RoboticArmEnv_V1(gym.Env):
                         if dist < self.arm_width*2.0:
                             collision_detected = True
 
+        # self.state = tuple(np.round(self.theta / self.increment)) + tuple(np.round(self.phi / self.increment)) + tuple(np.array(self.dest, dtype=np.float32),)
+        self.state = np.concatenate((np.round(self.theta / self.increment), np.round(self.phi / self.increment),
+                                     np.array(self.dest, dtype=np.float32)))
 
-        # self.dist2Dest = (glm.length(self.dest - end_effector))
-        self.state = np.concatenate((self.theta, self.phi, self.dest))
         # CALCULATE REWARD
-        robot_1_hit_destination = self.checkSphereCollision(glm.vec3(end_effectors[0]), self.arm_width, self.dest[0], self.destSize)
-        robot_2_hit_destination = self.checkSphereCollision(glm.vec3(end_effectors[1]), self.arm_width, self.dest[1], self.destSize)
+        dest1 = glm.vec3(self.dest[0:3])
+        dest2 = glm.vec3(self.dest[3:6])
+        robot_1_hit_destination = self.checkSphereCollision(glm.vec3(end_effectors[0]), self.arm_width, dest1, self.destSize)
+        robot_2_hit_destination = self.checkSphereCollision(glm.vec3(end_effectors[1]), self.arm_width, dest2, self.destSize)
 
         # general Rewards
         if collision_detected:
             reward = -10000
             done = True
         elif robot_1_hit_destination and robot_2_hit_destination:
-            reward = 1000 * self.alpha_reward
+            reward = self.total_correct_reward * self.alpha_reward
             done = True
         elif robot_1_hit_destination:
             reward = -1
@@ -119,13 +133,23 @@ class RoboticArmEnv_V1(gym.Env):
             reward = -2
             done = False
 
-        # Give a reward when the robot reaches the destination even if the other robot isn't there yet
-        if(robot_1_hit_destination and not self.first_time_hit[0]):
-            reward += (1 - self.alpha_reward) / self.num_robots * 1000
-            self.first_time_hit[0] = True
-        if(robot_2_hit_destination and not self.first_time_hit[1]):
-            reward += (1 - self.alpha_reward) / self.num_robots * 1000
-            self.first_time_hit[1] = True
+        dist_robot1 = self.getDistanceToPoints(glm.vec3(end_effectors[0]), dest1)
+        dist_robot2 = self.getDistanceToPoints(glm.vec3(end_effectors[1]), dest2)
+        # Gives incremental rewards as the robotic arms approach the destination
+        while self.destSizeIndex[0] < self.num_increments_dest:
+            if dist_robot1 < self.destSizes[self.destSizeIndex[0]]:
+                self.destSizeIndex[0] += 1
+                # print(self.destSizeIndex[0])
+                reward += (1 - self.alpha_reward) / self.num_robots * self.total_correct_reward / self.num_increments_dest
+            else:
+                break
+        while self.destSizeIndex[1] < self.num_increments_dest:
+            if dist_robot2 < self.destSizes[self.destSizeIndex[1]]:
+                self.destSizeIndex[1] += 1
+                # print(self.destSizeIndex[1])
+                reward += (1 - self.alpha_reward) / self.num_robots * self.total_correct_reward / self.num_increments_dest
+            else:
+                break
 
         info = {"End Effector": end_effectors}
         return self.state, reward, done, info
@@ -133,21 +157,26 @@ class RoboticArmEnv_V1(gym.Env):
     def reset(self, seed=None, options=None):
         # state init
         self.done = False
-        self.theta = np.random.rand(self.num_arms * self.num_robots)*2*np.pi  # [0, 2*pi]
-        self.phi = np.random.rand(self.num_arms * self.num_robots)*2*np.pi  # [0, 2*pi]
+        self.theta = np.array(self.num_arms * self.num_robots * [random.randint(0, self.num_increments) * self.increment]) # [0, 2*pi]
+        self.phi = np.array(self.num_arms * self.num_robots * [random.randint(0, self.num_increments) * self.increment]) # [0, 2*pi]
         self.dest = []
         for r in range(self.num_robots):
             destination_x = random.random()
             destination_y = random.random()
             destination_z = random.random()
             dest = glm.vec3(destination_x, destination_y, destination_z)
+            # dest = glm.vec3(0, 0, 0)
             dest = glm.normalize(dest)
-            dest = random.random() * self.arm_length * dest
-            self.dest.append(dest.x)
+            dest = self.robot_roots[r] + dest * self.num_arms * self.arm_length * random.random()
             self.dest.append(dest.y)
+            self.dest.append(dest.x)
             self.dest.append(dest.z)
 
-        self.state = np.concatenate((self.theta, self.phi, self.dest))
+        self.state = self.observation_space.sample()
+        print(self.state)
+        self.state = np.concatenate((np.round(self.theta / self.increment), np.round(self.phi / self.increment), np.array(self.dest, dtype=np.float32)))
+        # self.state = tuple(np.round(self.theta / self.increment)) + tuple(np.round(self.phi / self.increment)) + tuple(np.array(self.dest, dtype=np.float32),)
+        print(self.state)
         return self.state
 
     def render_init(self):
@@ -167,7 +196,7 @@ class RoboticArmEnv_V1(gym.Env):
         self.render_init()
 
         # Uncomment to rotate the scene
-        # glRotatef(-1.0, 0, 1, 0)
+        glRotatef(-1.0, 0, 1, 0)
 
         # RENDER Robotic Arm
         for event in pygame.event.get():
@@ -206,12 +235,15 @@ class RoboticArmEnv_V1(gym.Env):
             end_effectors.append(glm.vec3(cubes[-1]))
 
         # RENDER DESTINATION
-        glColor((1, 1, 0))
-        for d in range(self.num_robots):
-            self.RenderSphere((self.dest[d:d+3], self.destSize))
+        # glColor((1, 1, 0))
+        # for d in range(self.num_robots):
+        #     if(self.destSizeIndex[d] < self.num_increments_dest):
+        #         self.RenderSphere((self.dest[3*d:3*d + 3], self.destSizes[self.destSizeIndex[d]]))
+        #     else:
+        #         self.RenderSphere((self.dest[3*d:3*d+3], self.destSize))
 
         for d in range(self.num_robots):
-            self.RenderLine(end_effectors[d], self.dest[d:d+3])
+            self.RenderLine(end_effectors[d], self.dest[3*d:3*d+3])
 
         # RENDER OBSTACLES
         # for obstacle in self.obstacles:
@@ -309,6 +341,9 @@ class RoboticArmEnv_V1(gym.Env):
 
     def checkSphereCollision(self, p1, r1, p2, r2):
         return glm.length(p2 - p1) < r1 + r2
+
+    def getDistanceToPoints(self, p1, p2):
+        return glm.length(p2 - p1)
 
     ############
     # Finding the closest distance between two line segments (used in the collision calculation) uses a solution
