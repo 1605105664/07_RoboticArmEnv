@@ -24,7 +24,7 @@ class RoboticArmEnv_V1(gym.Env):
         self.arm_length = arm_length
         self.arm_width = arm_width
         self.num_arms = num_arms
-        self.num_robots = 2
+        self.num_robots = 1
         self.robot_roots = [glm.vec3(0.0, self.arm_length, 0.0), glm.vec3(0.0, -self.arm_length, 0.0)]
         self.destSize = destSize
         self.increment = increment
@@ -99,33 +99,30 @@ class RoboticArmEnv_V1(gym.Env):
         # self.dist2Dest = (glm.length(self.dest - end_effector))
         self.state = np.concatenate((self.theta, self.phi, self.dest))
         # CALCULATE REWARD
-        robot_1_hit_destination = self.checkSphereCollision(glm.vec3(end_effectors[0]), self.arm_width, self.dest[0], self.destSize)
-        robot_2_hit_destination = self.checkSphereCollision(glm.vec3(end_effectors[1]), self.arm_width, self.dest[1], self.destSize)
+        robots_hit_destination = []
+        num_hits = 0
+        for r in range(self.num_robots):
+            robots_hit_destination.append(self.checkSphereCollision(glm.vec3(end_effectors[r]), self.arm_width, self.dest[r], self.destSize))
+            if(robots_hit_destination[r] == True):
+                num_hits += 1
 
         # general Rewards
         if collision_detected:
             reward = -10000
             done = True
-        elif robot_1_hit_destination and robot_2_hit_destination:
+        elif num_hits == self.num_robots:
             reward = 1000 * self.alpha_reward
             done = True
-        elif robot_1_hit_destination:
-            reward = -1
-            done = False
-        elif robot_2_hit_destination:
-            reward = -1
-            done = False
         else:
-            reward = -2
+            reward = -self.num_robots + num_hits
             done = False
 
         # Give a reward when the robot reaches the destination even if the other robot isn't there yet
-        if(robot_1_hit_destination and not self.first_time_hit[0]):
-            reward += (1 - self.alpha_reward) / self.num_robots * 1000
-            self.first_time_hit[0] = True
-        if(robot_2_hit_destination and not self.first_time_hit[1]):
-            reward += (1 - self.alpha_reward) / self.num_robots * 1000
-            self.first_time_hit[1] = True
+
+        for r in range(self.num_robots):
+            if(robots_hit_destination[r] and not self.first_time_hit[r]):
+                reward += (1 - self.alpha_reward) / self.num_robots * 1000
+                self.first_time_hit[r] = True
 
         info = {"End Effector": end_effectors}
         return self.state, reward, done, info

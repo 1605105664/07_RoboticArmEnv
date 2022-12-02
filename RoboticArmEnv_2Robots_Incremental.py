@@ -44,10 +44,14 @@ class RoboticArmEnv_V1(gym.Env):
         # gym init
         reach_dist = self.arm_length
         self.action_space = gym.spaces.Discrete(4*self.num_robots*self.num_arms)
-        # num_arms*[self.theta, self.phi], self.dest.x, self.dest.y, self.dest.z])
-        self.observation_space = gym.spaces.Tuple(tuple(self.num_robots * self.num_arms * 2 * [gym.spaces.Discrete(self.num_increments)]) +
-                                                   tuple([gym.spaces.Box(np.array(3*self.num_robots*[-reach_dist*3]), np.array(3*self.num_robots*[reach_dist*3]), dtype=np.float32)]))
+            # num_arms*[self.theta, self.phi], self.dest.x, self.dest.y, self.dest.z])
+        self.observation_space = gym.spaces.Box(
+            np.array(2 * self.num_robots * self.num_arms * [0] + 3 * self.num_robots * [-reach_dist]),
+            np.array(2 * self.num_robots * self.num_arms * [2 * np.pi] + 3 * self.num_robots * [reach_dist]),
+            dtype=np.float32)
+
         print(self.observation_space)
+
         self.rendered = False
         self.training = training
 
@@ -107,8 +111,8 @@ class RoboticArmEnv_V1(gym.Env):
                             collision_detected = True
 
         # self.state = tuple(np.round(self.theta / self.increment)) + tuple(np.round(self.phi / self.increment)) + tuple(np.array(self.dest, dtype=np.float32),)
-        self.state = np.concatenate((np.round(self.theta / self.increment), np.round(self.phi / self.increment),
-                                     np.array(self.dest, dtype=np.float32)))
+
+        self.state = np.concatenate((self.theta, self.phi, self.dest))
 
         # CALCULATE REWARD
         dest1 = glm.vec3(self.dest[0:3])
@@ -157,8 +161,8 @@ class RoboticArmEnv_V1(gym.Env):
     def reset(self, seed=None, options=None):
         # state init
         self.done = False
-        self.theta = np.array(self.num_arms * self.num_robots * [random.randint(0, self.num_increments) * self.increment]) # [0, 2*pi]
-        self.phi = np.array(self.num_arms * self.num_robots * [random.randint(0, self.num_increments) * self.increment]) # [0, 2*pi]
+        self.theta = np.random.rand(self.num_arms * self.num_robots)*2*np.pi  # [0, 2*pi]
+        self.phi = np.random.rand(self.num_arms * self.num_robots)*2*np.pi  # [0, 2*pi]
         self.dest = []
         for r in range(self.num_robots):
             destination_x = random.random()
@@ -172,10 +176,8 @@ class RoboticArmEnv_V1(gym.Env):
             self.dest.append(dest.x)
             self.dest.append(dest.z)
 
-        self.state = self.observation_space.sample()
-        print(self.state)
-        self.state = np.concatenate((np.round(self.theta / self.increment), np.round(self.phi / self.increment), np.array(self.dest, dtype=np.float32)))
-        # self.state = tuple(np.round(self.theta / self.increment)) + tuple(np.round(self.phi / self.increment)) + tuple(np.array(self.dest, dtype=np.float32),)
+
+        self.state = np.concatenate((self.theta, self.phi, self.dest))
         print(self.state)
         return self.state
 
