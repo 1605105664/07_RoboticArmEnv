@@ -134,7 +134,7 @@ class RoboticArmEnv_V1(gym.Env):
             reward = self.total_correct_reward * self.alpha_reward
             done = True
         else:
-            reward = -self.num_robots + num_hits
+            reward = -(self.num_robots + num_hits) * 10
             done = False
 
 
