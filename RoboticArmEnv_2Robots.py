@@ -118,7 +118,6 @@ class RoboticArmEnv_V1(gym.Env):
             done = False
 
         # Give a reward when the robot reaches the destination even if the other robot isn't there yet
-
         for r in range(self.num_robots):
             if(robots_hit_destination[r] and not self.first_time_hit[r]):
                 reward += (1 - self.alpha_reward) / self.num_robots * 1000
