@@ -115,5 +115,7 @@ dmypy.json
 
 a2c.zip
 dqn.zip
+*.zip
+*.monitor.csv
 temp/
 ppo_circles_0_5.zip
