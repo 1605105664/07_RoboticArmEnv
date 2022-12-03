@@ -6,9 +6,7 @@ from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.env_checker import check_env
 
 import RoboticArmEnv_2Robots_Incremental as RAE
-import time
 
-import render
 
 #number of arm segments
 N_ARMS=2
@@ -35,35 +33,9 @@ env = make_vec_env("RoboticArmEnv-v1", n_envs=8)
 # model.learn(total_timesteps=1000000)
 # model.save("ppo")
 
-# model = DQN("MlpPolicy", env, verbose=2, exploration_fraction=0.70)
-# model.learn(total_timesteps=1000000)
-# model.save("dqn")
+model = DQN("MlpPolicy", env, verbose=2, exploration_fraction=0.70)
+model.learn(total_timesteps=100)
+model.save("dqn")
 
 # del model # remove to demonstrate saving and loading
-
-# model = A2C.load("a2c")
-model = PPO.load("ppo")
-# model = DQN.load("dqn")
-
-render.render_init()
-episodes = 100
-env = RAE.RoboticArmEnv_V1(training=False, num_arms=N_ARMS)
-for episode in range(episodes):
-    done = False
-    obs = env.reset()
-    cumReward = 0
-    while not done:
-        # Training Model
-        action, _states = model.predict(obs)
-        obs, reward, done, info = env.step(action)
-
-        # Random Action
-        # random_action = env.action_space.sample()
-        # obs, reward, done, info = env.step(random_action)
-
-        # print('obs',obs,'reward', reward)
-        cumReward+=reward
-        render.render(env)
-        time.sleep(0.05) #slow down the animation
-    print('Reward:', cumReward)
 
