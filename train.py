@@ -11,18 +11,19 @@ import RoboticArmEnv_2Robots_Incremental as RAE
 
 #number of arm segments
 N_ARMS=2
+ALPHA=1.0
 register(
     id="RoboticArmEnv-v1",
     entry_point=RAE.RoboticArmEnv_V1,
     max_episode_steps=1000,
-    kwargs={'num_arms': N_ARMS}
+    kwargs={'num_arms': N_ARMS, 'alpha_reward': ALPHA}
 )
 
 # Parallel environments
-# env = make_vec_env("RoboticArmEnv-v1", n_envs=8)
+env = make_vec_env("RoboticArmEnv-v1", n_envs=8)
 
 # Single Threaded Env
-env = RAE.RoboticArmEnv_V1(training=True, num_arms=N_ARMS)
+# env = RAE.RoboticArmEnv_V1(training=True, num_arms=N_ARMS)
 
 env = Monitor(env,'log')
 
@@ -33,8 +34,14 @@ env = Monitor(env,'log')
 # model.save("a2c")
 
 model = PPO("MlpPolicy", env, verbose=2)
-model.learn(total_timesteps=100000)
+model.learn(total_timesteps=10000000)
 model.save("ppo")
+
+# model = DQN("MlpPolicy", env, verbose=2, exploration_fraction=0.70)
+# model.learn(total_timesteps=100)
+# model.save("dqn")
+
+# del model # remove to demonstrate saving and loading
 
 # model = DQN("MlpPolicy", env, verbose=2, exploration_fraction=0.70)
 # model.learn(total_timesteps=100)
