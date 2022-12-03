@@ -13,13 +13,13 @@ def bound(num):
 
 
 class RoboticArmEnv_V1(gym.Env):
-    def __init__(self, training=True, num_arms=2, arm_length=10, arm_width=0.5, destSize=5, alpha_reward=0.5):
+    def __init__(self, training=True, num_arms=2, num_robots=2, arm_length=10, arm_width=0.5, destSize=5, alpha_reward=0.5):
         super().__init__()
         # Sim Parameters
         self.arm_length = arm_length
         self.arm_width = arm_width
         self.num_arms = num_arms
-        self.num_robots = 2
+        self.num_robots = num_robots
         self.robot_roots = [glm.vec3(0.0, self.arm_length, 0.0), glm.vec3(0.0, -self.arm_length, 0.0)]
         self.destSize = destSize
         self.increment = np.pi / 12.0
