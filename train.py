@@ -18,10 +18,10 @@ register(
 )
 
 # Parallel environments
-env = make_vec_env("RoboticArmEnv-v1", n_envs=8)
+# env = make_vec_env("RoboticArmEnv-v1", n_envs=8)
 
 # Single Threaded Env
-# env = RAE.RoboticArmEnv_V1(training=True, num_arms=N_ARMS)
+env = RAE.RoboticArmEnv_V1(training=True, num_arms=N_ARMS)
 
 # It will check your custom environment and output additional warnings if needed
 # check_env(env)

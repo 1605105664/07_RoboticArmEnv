@@ -41,8 +41,8 @@ class RoboticArmEnv_V1(gym.Env):
         self.action_space = gym.spaces.Discrete(4*self.num_robots*self.num_arms)
             # num_arms*[self.theta, self.phi], self.dest.x, self.dest.y, self.dest.z])
         self.observation_space = gym.spaces.Box(
-            np.array(2 * self.num_robots * self.num_arms * [0] + 3 * self.num_robots * [-reach_dist*3]),
-            np.array(2 * self.num_robots * self.num_arms * [2 * np.pi] + 3 * self.num_robots * [reach_dist*3]),
+            np.array(2 * self.num_robots * self.num_arms * [0] + 4 * self.num_robots * [-reach_dist*4]),
+            np.array(2 * self.num_robots * self.num_arms * [2 * np.pi] + 4 * self.num_robots * [reach_dist*4]),
             dtype=np.float32)
 
         # print(self.observation_space)
@@ -108,7 +108,6 @@ class RoboticArmEnv_V1(gym.Env):
 
         # self.state = tuple(np.round(self.theta / self.increment)) + tuple(np.round(self.phi / self.increment)) + tuple(np.array(self.dest, dtype=np.float32),)
 
-        self.state = np.concatenate((self.theta, self.phi, self.dest))
 
         # print(self.state)
 
@@ -155,6 +154,8 @@ class RoboticArmEnv_V1(gym.Env):
                     break
 
         info = {"End Effector": end_effectors}
+
+        self.state = np.concatenate((self.theta, self.phi, self.dest, dist_destinations))
         return self.state, reward, done, info
 
     def reset(self, seed=None, options=None):
@@ -167,16 +168,17 @@ class RoboticArmEnv_V1(gym.Env):
             destination_x = random.random()
             destination_y = random.random()
             destination_z = random.random()
-            dest = glm.vec3(destination_x, destination_y, destination_z)
-            # dest = glm.vec3(0, 0, 0)
-            dest = glm.normalize(dest)
-            dest = self.robot_roots[r] + dest * self.num_arms * self.arm_length * random.random()
+            # dest = glm.vec3(destination_x, destination_y, destination_z)
+            dest = glm.vec3(10, 0, 0)
+            # dest = glm.normalize(dest)
+            # dest = self.robot_roots[r] + dest * self.num_arms * self.arm_length * random.random()
             self.dest.append(dest.y)
             self.dest.append(dest.x)
             self.dest.append(dest.z)
 
         # Calculate Robotic Arm Positions
         self.previous_end_effectors = []
+        dist_destinations = []
         for r in range(self.num_robots):
             m = glm.mul(glm.rotate(-glm.pi() / 2, (0, 0, 1)), glm.translate(self.robot_roots[r]))
             m = glm.mul(m, glm.rotate(self.theta[0 + self.num_arms * r], (0, 1, 0)))
@@ -191,10 +193,12 @@ class RoboticArmEnv_V1(gym.Env):
             m = glm.mul(glm.mul(glm.mul(m, glm.translate((self.arm_length, 0, 0,))), glm.rotate(0, (1, 0, 0))),
                         glm.rotate(-glm.pi(), (0, 0, 1)))
             self.previous_end_effectors.append(glm.vec3(m * glm.vec4(0, 0, 0, 1)))
+            dist_destinations.append(self.getDistanceToPoints(glm.vec3(self.dest[3 * r:3 * r + 3]), self.previous_end_effectors[r]))
 
 
         self.destSizeIndex = np.array([0]*self.num_robots, dtype=int)
-        self.state = np.concatenate((self.theta, self.phi, self.dest))
+
+        self.state = np.concatenate((self.theta, self.phi, self.dest, dist_destinations))
         # print(self.state)
         return self.state
 

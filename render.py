@@ -54,9 +54,9 @@ def render(env):
         end_effectors.append(glm.vec3(cubes[-1]))
 
     # RENDER DESTINATION
-    glColor((1, 1, 0))
-    for d in range(env.num_robots):
-        RenderSphere(env, (env.dest[d:d+3], env.destSize))
+    # glColor((1, 1, 0))
+    # for d in range(env.num_robots):
+    #     RenderSphere(env, (env.dest[d:d+3], env.destSize))
 
     for d in range(env.num_robots):
         RenderLine(env, end_effectors[d], env.dest[d:d+3])
