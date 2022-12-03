@@ -2,14 +2,14 @@ import gym
 import numpy as np
 from gym.envs.registration import register
 from stable_baselines3 import *
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
-from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecMonitor
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.monitor import Monitor
 
 import RoboticArmEnv_2Robots_Incremental as RAE
 import time
 import argparse
+import random
 
 # initialize CLI
 parser = argparse.ArgumentParser(description='CLI for train module')
@@ -28,15 +28,19 @@ register(
 
 if __name__ == '__main__':
     # Get current timestamp as JobID
-    JobID = str(round(time.time()))
+    JobID = str(round(time.time()))+str(random.randrange(1e5, 1e6))  # include random seed to prevent collision
+    print('args:', args)
+    print('JobID:', JobID)
 
     # Parallel environments
     # env = make_vec_env("RoboticArmEnv-v1", n_envs=8)
     # counter=itertools.count() #infinite counter
-    env = SubprocVecEnv([lambda: Monitor(gym.make("RoboticArmEnv-v1"), 'output/ppo/log'+JobID)]+[lambda: gym.make("RoboticArmEnv-v1")])
+    # env = SubprocVecEnv([lambda: Monitor(gym.make("RoboticArmEnv-v1"), 'output/ppo/'+JobID)]+[lambda: gym.make("RoboticArmEnv-v1")]*3)
+    env = SubprocVecEnv([lambda: gym.make("RoboticArmEnv-v1")]*4)
+    env = VecMonitor(env, 'output/ppo/'+JobID)
 
     # Single Threaded Env
-    # env = RAE.RoboticArmEnv_V1(training=True, num_arms=N_ARMS)
+    # env = RAE.RoboticArmEnv_V1(training=True, num_arms=args['N_ARMS'], alpha_reward=args['ALPHA'], num_robots=args['N_ROBOTS'])
     # env = Monitor(env,'log')
 
     # It will check your custom environment and output additional warnings if needed
@@ -46,7 +50,7 @@ if __name__ == '__main__':
     # model.save("a2c")
 
     model = PPO("MlpPolicy", env, verbose=2)
-    model.learn(total_timesteps=100)
+    model.learn(total_timesteps=1e3)
     model.save("output/ppo/"+JobID)
 
     # model = DQN("MlpPolicy", env, verbose=2, exploration_fraction=0.70)
