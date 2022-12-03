@@ -5,6 +5,13 @@ import glm
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
+
+#######
+# This pygame renderer is based off of the renderer in this tutorial
+# https://pythonprogramming.net/opengl-pyopengl-python-pygame-tutorial/
+# We learned how to render basic shapes from this tutorial
+# and created the rest of the render functionality on our own to work with our open ai gym model.
+#######
 def render_init():
     pygame.init()
     display = (800, 600)
