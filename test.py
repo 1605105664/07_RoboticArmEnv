@@ -1,17 +1,10 @@
 from stable_baselines3 import *
-from gym.envs.registration import register
 import RoboticArmEnv_2Robots_Incremental as RAE
 import render
 import time
 
 #number of arm segments
 N_ARMS=2
-register(
-    id="RoboticArmEnv-v1",
-    entry_point=RAE.RoboticArmEnv_V1,
-    max_episode_steps=1000,
-    kwargs={'num_arms': N_ARMS}
-)
 
 # model = A2C.load("a2c")
 model = PPO.load("ppo")

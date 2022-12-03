@@ -1,4 +1,3 @@
-from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.results_plotter import *
 import matplotlib.pyplot as plt
 
@@ -32,4 +31,4 @@ def plot_results(log_folder, title='Learning Curve', window=10):
     plt.show()
 
 
-plot_results('./', window=10)
+plot_results('./', window=50)

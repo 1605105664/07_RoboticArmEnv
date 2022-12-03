@@ -4,6 +4,7 @@ from gym.envs.registration import register
 from stable_baselines3 import *
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.env_checker import check_env
+from stable_baselines3.common.monitor import Monitor
 
 import RoboticArmEnv_2Robots_Incremental as RAE
 
@@ -38,4 +39,3 @@ model.save("ppo")
 # model = DQN("MlpPolicy", env, verbose=2, exploration_fraction=0.70)
 # model.learn(total_timesteps=100)
 # model.save("dqn")
-
