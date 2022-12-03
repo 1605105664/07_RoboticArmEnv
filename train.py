@@ -16,13 +16,14 @@ parser = argparse.ArgumentParser(description='CLI for train module')
 parser.add_argument('-nr', '--N_ROBOTS', help='# of robot', default=1, type=int)
 parser.add_argument('-na', '--N_ARMS', help='# of arms per robot', default=2, type=int)
 parser.add_argument('-a', '--ALPHA', help='alpha value', default=0.5, type=float)
+parser.add_argument('-m', '--MAX_STEP', help='maximum timesteps', default=1000, type=int)
 args = vars(parser.parse_args())
 
 # number of arm segments
 register(
     id="RoboticArmEnv-v1",
     entry_point=RAE.RoboticArmEnv_V1,
-    max_episode_steps=1000,
+    max_episode_steps=args['MAX_STEP'],
     kwargs={'num_arms': args['N_ARMS'], 'alpha_reward': args['ALPHA'], 'num_robots': args['N_ROBOTS']}
 )
 
