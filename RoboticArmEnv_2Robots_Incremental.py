@@ -166,7 +166,7 @@ class RoboticArmEnv_V1(gym.Env):
         if self.num_robots == 1:
             self.dest = [0, self.arm_length, 0]
         elif self.num_robots == 2:
-            self.dest = [-self.arm_length/3, self.arm_length/2, 0, self.arm_length/3, self.arm_length/2, 0]
+            self.dest = [0, self.arm_length/2, -self.arm_length/2, 0, self.arm_length/2, self.arm_length/2]
         else:
             for r in range(self.num_robots):
                 destination_x = random.random()
