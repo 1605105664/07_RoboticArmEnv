@@ -18,7 +18,7 @@ def bound(num):
 
 
 class RoboticArmEnv_V1(gym.Env):
-    def __init__(self, training=True, num_arms=2, arm_length=10, arm_width=0.5, destSize=5, alpha_reward=1.0):
+    def __init__(self, training=True, num_arms=2, arm_length=10, arm_width=0.5, destSize=5, alpha_reward=0.5):
         super().__init__()
         # Sim Parameters
         self.arm_length = arm_length
@@ -63,6 +63,7 @@ class RoboticArmEnv_V1(gym.Env):
             # (glm.vec3(5, 0, 0), 2)
         ]
         self.name = "RobotArmEnv"
+        self.previous_end_effectors = []
         random.seed(time.time())
 
     def step(self, action):
@@ -117,15 +118,22 @@ class RoboticArmEnv_V1(gym.Env):
         # print(self.state)
 
         # CALCULATE REWARD
-        robots_hit_destination = []
+        prev_dist_destinations = []
         dist_destinations = []
         num_hits = 0
+        num_dist_farther = 0
+        num_dist_closer = 0
         for r in range(self.num_robots):
-
+            prev_dist_destinations.append(self.getDistanceToPoints(glm.vec3(self.dest[3*r:3*r+3]), self.previous_end_effectors[r]))
             dist_destinations.append(self.getDistanceToPoints(glm.vec3(self.dest[3*r:3*r+3]), end_effectors[r]))
 
             if (dist_destinations[r] < self.destSize):
                 num_hits += 1
+
+            if prev_dist_destinations[r] - dist_destinations[r] > 0.001:
+                num_dist_closer += 1
+            elif prev_dist_destinations[r] - dist_destinations[r] < 0.001:
+                num_dist_farther += 1
 
 
         # general Rewards
@@ -136,7 +144,7 @@ class RoboticArmEnv_V1(gym.Env):
             reward = self.total_correct_reward * self.alpha_reward
             done = True
         else:
-            reward = -(self.num_robots + num_hits) * 2
+            reward = -2 * (num_dist_farther + 1) + num_dist_closer
             done = False
 
 
@@ -171,6 +179,23 @@ class RoboticArmEnv_V1(gym.Env):
             self.dest.append(dest.y)
             self.dest.append(dest.x)
             self.dest.append(dest.z)
+
+        # Calculate Robotic Arm Positions
+        self.previous_end_effectors = []
+        for r in range(self.num_robots):
+            m = glm.mul(glm.rotate(-glm.pi() / 2, (0, 0, 1)), glm.translate(self.robot_roots[r]))
+            m = glm.mul(m, glm.rotate(self.theta[0 + self.num_arms * r], (0, 1, 0)))
+            m = glm.mul(m, glm.rotate(self.phi[0 + self.num_arms * r], (0, 0, 1)))
+
+            for i in range(1, self.num_arms):
+                m = glm.mul(glm.mul(glm.mul(m, glm.translate((self.arm_length, 0, 0,))),
+                                    glm.rotate(self.theta[i + self.num_arms * r], (1, 0, 0))),
+                            glm.rotate(-glm.pi(), (0, 0, 1)))
+                m = glm.mul(m, glm.rotate(self.phi[i + self.num_arms * r], (0, 0, 1)))
+
+            m = glm.mul(glm.mul(glm.mul(m, glm.translate((self.arm_length, 0, 0,))), glm.rotate(0, (1, 0, 0))),
+                        glm.rotate(-glm.pi(), (0, 0, 1)))
+            self.previous_end_effectors.append(glm.vec3(m * glm.vec4(0, 0, 0, 1)))
 
 
         self.destSizeIndex = np.array([0]*self.num_robots, dtype=int)

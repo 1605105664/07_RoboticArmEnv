@@ -31,7 +31,7 @@ env = make_vec_env("RoboticArmEnv-v1", n_envs=1)
 # model.save("a2c")
 
 model = PPO("MlpPolicy", env, verbose=3)
-model.learn(total_timesteps=100000)
+model.learn(total_timesteps=1000000)
 model.save("ppo")
 #
 # model = DQN("MlpPolicy", env, verbose=3, exploration_fraction=0.70)
