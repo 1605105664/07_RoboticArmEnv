@@ -33,11 +33,8 @@ if __name__ == '__main__':
     print('JobID:', JobID)
 
     # Parallel environments
-    # env = make_vec_env("RoboticArmEnv-v1", n_envs=8)
-    # counter=itertools.count() #infinite counter
-    # env = SubprocVecEnv([lambda: Monitor(gym.make("RoboticArmEnv-v1"), 'output/ppo/'+JobID)]+[lambda: gym.make("RoboticArmEnv-v1")]*3)
     env = SubprocVecEnv([lambda: gym.make("RoboticArmEnv-v1")]*4)
-    env = VecMonitor(env, 'output/ppo/'+JobID)
+    env = VecMonitor(env, './output/ppo/'+JobID)
 
     # Single Threaded Env
     # env = RAE.RoboticArmEnv_V1(training=True, num_arms=args['N_ARMS'], alpha_reward=args['ALPHA'], num_robots=args['N_ROBOTS'])
@@ -50,8 +47,8 @@ if __name__ == '__main__':
     # model.save("a2c")
 
     model = PPO("MlpPolicy", env, verbose=2)
-    model.learn(total_timesteps=1e3)
-    model.save("output/ppo/"+JobID)
+    model.learn(total_timesteps=1e7)
+    model.save("./output/ppo/"+JobID)
 
     # model = DQN("MlpPolicy", env, verbose=2, exploration_fraction=0.70)
     # model.learn(total_timesteps=100)
