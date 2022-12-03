@@ -8,23 +8,27 @@ from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.monitor import Monitor
 
 import RoboticArmEnv_2Robots_Incremental as RAE
+import time
 
 
-#number of arm segments
-N_ARMS=2
-ALPHA=1.0
+# number of arm segments
+N_ARMS = 2
+ALPHA = 1.0
 register(
-id="RoboticArmEnv-v1",
-entry_point=RAE.RoboticArmEnv_V1,
-max_episode_steps=1000,
-kwargs={'num_arms': N_ARMS, 'alpha_reward': ALPHA}
+    id="RoboticArmEnv-v1",
+    entry_point=RAE.RoboticArmEnv_V1,
+    max_episode_steps=1000,
+    kwargs={'num_arms': N_ARMS, 'alpha_reward': ALPHA}
 )
 
 if __name__ == '__main__':
+    # Get current timestamp as JobID
+    JobID = str(round(time.time()))
+
     # Parallel environments
     # env = make_vec_env("RoboticArmEnv-v1", n_envs=8)
     # counter=itertools.count() #infinite counter
-    env=SubprocVecEnv([lambda: Monitor(gym.make("RoboticArmEnv-v1"), 'log')]+[lambda: gym.make("RoboticArmEnv-v1")]*7)
+    env = SubprocVecEnv([lambda: Monitor(gym.make("RoboticArmEnv-v1"), 'output/ppo/log'+JobID)]+[lambda: gym.make("RoboticArmEnv-v1")])
 
     # Single Threaded Env
     # env = RAE.RoboticArmEnv_V1(training=True, num_arms=N_ARMS)
@@ -37,8 +41,8 @@ if __name__ == '__main__':
     # model.save("a2c")
 
     model = PPO("MlpPolicy", env, verbose=2)
-    model.learn(total_timesteps=10000000)
-    model.save("ppo")
+    model.learn(total_timesteps=100)
+    model.save("output/ppo/"+JobID)
 
     # model = DQN("MlpPolicy", env, verbose=2, exploration_fraction=0.70)
     # model.learn(total_timesteps=100)

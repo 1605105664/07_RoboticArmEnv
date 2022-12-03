@@ -2,13 +2,12 @@ from stable_baselines3 import *
 import RoboticArmEnv_2Robots_Incremental as RAE
 import render
 import time
+import glob
 
 #number of arm segments
 N_ARMS=2
 
-# model = A2C.load("a2c")
-model = PPO.load("ppo")
-# model = DQN.load("dqn")
+model = PPO.load(max(glob.glob('output/ppo/*.zip')))
 
 render.render_init()
 episodes = 100
