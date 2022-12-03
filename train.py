@@ -23,19 +23,19 @@ register(
 # Single Threaded Env
 env = RAE.RoboticArmEnv_V1(training=True, num_arms=N_ARMS)
 
+env = Monitor(env,'log')
+
 # It will check your custom environment and output additional warnings if needed
 # check_env(env)
 # model = A2C("MlpPolicy", env, verbose=2)
 # model.learn(total_timesteps=100000)
 # model.save("a2c")
 
-# model = PPO("MlpPolicy", env, verbose=2)
-# model.learn(total_timesteps=1000000)
-# model.save("ppo")
+model = PPO("MlpPolicy", env, verbose=2)
+model.learn(total_timesteps=100000)
+model.save("ppo")
 
-model = DQN("MlpPolicy", env, verbose=2, exploration_fraction=0.70)
-model.learn(total_timesteps=100)
-model.save("dqn")
-
-# del model # remove to demonstrate saving and loading
+# model = DQN("MlpPolicy", env, verbose=2, exploration_fraction=0.70)
+# model.learn(total_timesteps=100)
+# model.save("dqn")
 

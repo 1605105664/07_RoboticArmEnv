@@ -14,8 +14,8 @@ register(
 )
 
 # model = A2C.load("a2c")
-# model = PPO.load("ppo")
-model = DQN.load("dqn")
+model = PPO.load("ppo")
+# model = DQN.load("dqn")
 
 render.render_init()
 episodes = 100
