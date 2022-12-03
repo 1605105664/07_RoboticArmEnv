@@ -56,10 +56,10 @@ def render(env):
     # RENDER DESTINATION
     # glColor((1, 1, 0))
     # for d in range(env.num_robots):
-    #     RenderSphere(env, (env.dest[d:d+3], env.destSize))
+    #     RenderSphere(env, (env.dest[3*d:3*d+3], env.destSize))
 
     for d in range(env.num_robots):
-        RenderLine(env, end_effectors[d], env.dest[d:d+3])
+        RenderLine(env, end_effectors[d], env.dest[3*d:3*d+3])
 
     # RENDER OBSTACLES
     # for obstacle in env.obstacles:

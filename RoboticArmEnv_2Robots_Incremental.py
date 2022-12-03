@@ -19,7 +19,7 @@ class RoboticArmEnv_V1(gym.Env):
         self.arm_length = arm_length
         self.arm_width = arm_width
         self.num_arms = num_arms
-        self.num_robots = 1
+        self.num_robots = 2
         self.robot_roots = [glm.vec3(0.0, self.arm_length, 0.0), glm.vec3(0.0, -self.arm_length, 0.0)]
         self.destSize = destSize
         self.increment = np.pi / 12.0
@@ -163,18 +163,22 @@ class RoboticArmEnv_V1(gym.Env):
         self.done = False
         self.theta = np.random.rand(self.num_arms * self.num_robots)*2*np.pi  # [0, 2*pi]
         self.phi = np.random.rand(self.num_arms * self.num_robots)*2*np.pi  # [0, 2*pi]
-        self.dest = []
-        for r in range(self.num_robots):
-            destination_x = random.random()
-            destination_y = random.random()
-            destination_z = random.random()
-            # dest = glm.vec3(destination_x, destination_y, destination_z)
-            dest = glm.vec3(10, 0, 0)
-            # dest = glm.normalize(dest)
-            # dest = self.robot_roots[r] + dest * self.num_arms * self.arm_length * random.random()
-            self.dest.append(dest.y)
-            self.dest.append(dest.x)
-            self.dest.append(dest.z)
+        if self.num_robots == 1:
+            self.dest = [0, self.arm_length, 0]
+        elif self.num_robots == 2:
+            self.dest = [-self.arm_length/3, self.arm_length/2, 0, self.arm_length/3, self.arm_length/2, 0]
+        else:
+            for r in range(self.num_robots):
+                destination_x = random.random()
+                destination_y = random.random()
+                destination_z = random.random()
+                dest = glm.vec3(destination_x, destination_y, destination_z)
+                # dest = glm.vec3(10, 0, 0)
+                dest = glm.normalize(dest)
+                dest = self.robot_roots[r] + dest * self.num_arms * self.arm_length * random.random()
+                self.dest.append(dest.y)
+                self.dest.append(dest.x)
+                self.dest.append(dest.z)
 
         # Calculate Robotic Arm Positions
         self.previous_end_effectors = []
