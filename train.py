@@ -17,6 +17,7 @@ parser.add_argument('-nr', '--N_ROBOTS', help='# of robot', default=1, type=int)
 parser.add_argument('-na', '--N_ARMS', help='# of arms per robot', default=2, type=int)
 parser.add_argument('-a', '--ALPHA', help='alpha value', default=0.5, type=float)
 parser.add_argument('-m', '--MAX_STEP', help='maximum timesteps', default=1000, type=int)
+parser.add_argument('-d', '--DESTSIZE', help='destination size', default=5, type=int)
 args = vars(parser.parse_args())
 
 # number of arm segments
@@ -24,7 +25,9 @@ register(
     id="RoboticArmEnv-v1",
     entry_point=RAE.RoboticArmEnv_V1,
     max_episode_steps=args['MAX_STEP'],
-    kwargs={'num_arms': args['N_ARMS'], 'alpha_reward': args['ALPHA'], 'num_robots': args['N_ROBOTS']}
+    kwargs={'num_arms': args['N_ARMS'], 'alpha_reward': args['ALPHA'],
+            'num_robots': args['N_ROBOTS'], 'destSize': args['DESTSIZE']
+            }
 )
 
 if __name__ == '__main__':
@@ -48,7 +51,7 @@ if __name__ == '__main__':
     # model.save("a2c")
 
     model = PPO("MlpPolicy", env, verbose=2)
-    model.learn(total_timesteps=1e7)
+    model.learn(total_timesteps=1e5)
     model.save("./output/ppo/"+JobID)
 
     # model = DQN("MlpPolicy", env, verbose=2, exploration_fraction=0.70)
