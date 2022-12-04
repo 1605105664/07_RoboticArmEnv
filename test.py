@@ -7,12 +7,14 @@ import glob
 # number of arm segments
 N_ARMS = 2
 N_ROBOTS = 2
+DESTSIZE = 12
 
 model = PPO.load(max(glob.glob('output/ppo/*.zip')))
+# model = PPO.load('5/1670095709512208')
 
 render.render_init()
 episodes = 100
-env = RAE.RoboticArmEnv_V1(training=False, num_arms=N_ARMS, num_robots=N_ROBOTS)
+env = RAE.RoboticArmEnv_V1(training=False, num_arms=N_ARMS, num_robots=N_ROBOTS, destSize=DESTSIZE)
 for episode in range(episodes):
     done = False
     obs = env.reset()
