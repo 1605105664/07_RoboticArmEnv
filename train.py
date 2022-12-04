@@ -13,7 +13,7 @@ import random
 
 # initialize CLI
 parser = argparse.ArgumentParser(description='CLI for train module')
-parser.add_argument('-nr', '--N_ROBOTS', help='# of robot', default=2, type=int)
+parser.add_argument('-nr', '--N_ROBOTS', help='# of robot', default=1, type=int)
 parser.add_argument('-na', '--N_ARMS', help='# of arms per robot', default=2, type=int)
 parser.add_argument('-a', '--ALPHA', help='alpha value', default=0.5, type=float)
 parser.add_argument('-m', '--MAX_STEP', help='maximum timesteps', default=1000, type=int)
