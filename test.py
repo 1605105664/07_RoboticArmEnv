@@ -9,8 +9,8 @@ N_ARMS = 2
 N_ROBOTS = 2
 DESTSIZE = 12
 
-model = PPO.load(max(glob.glob('output/ppo/*.zip')))
-# model = PPO.load('5/1670095709512208')
+# model = PPO.load(max(glob.glob('output/ppo/*.zip')))
+model = PPO.load('model')
 
 render.render_init()
 episodes = 100

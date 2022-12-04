@@ -43,9 +43,9 @@ def plot_results(log_folder, x_axis='cum_timesteps',  y_axis='reward', window=10
 
 x='Episode Count'
 y='Episode Length'
-plot_results('./2_0', x_axis=x,  y_axis=y, window=100, label='alpha=0.0')
-plot_results('./2_25', x_axis=x,  y_axis=y, window=100, label='alpha=0.25')
-plot_results('./2_50', x_axis=x,  y_axis=y, window=100, label='alpha=0.5')
-plot_results('./2_75', x_axis=x,  y_axis=y, window=100, label='alpha=0.75')
-plot_results('./2_100', x_axis=x,  y_axis=y, window=100, label='alpha=1.0')
+plot_results('./1_0', x_axis=x,  y_axis=y, window=100, label='alpha=0.0')
+plot_results('./1_25', x_axis=x,  y_axis=y, window=100, label='alpha=0.25')
+plot_results('./1_50', x_axis=x,  y_axis=y, window=100, label='alpha=0.5')
+plot_results('./1_75', x_axis=x,  y_axis=y, window=100, label='alpha=0.75')
+plot_results('./1_100', x_axis=x,  y_axis=y, window=100, label='alpha=1.0')
 plt.show()
