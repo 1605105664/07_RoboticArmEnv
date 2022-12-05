@@ -84,6 +84,7 @@ class RoboticArmEnv_V1(gym.Env):
             prev_dist_destinations.append(self.getDistanceToPoints(glm.vec3(self.dest[3*r:3*r+3]), self.previous_end_effectors[r]))
             dist_destinations.append(self.getDistanceToPoints(glm.vec3(self.dest[3*r:3*r+3]), end_effectors[r]))
 
+        reward = 0
         # general Rewards
         if collision_detected:
             done = True

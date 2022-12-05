@@ -5,7 +5,6 @@ from stable_baselines3 import *
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecMonitor
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.callbacks import EvalCallback
 
 import RoboticArmEnv_2Robots_Incremental as RAE
 import time
@@ -54,12 +53,12 @@ if __name__ == '__main__':
 
     # It will check your custom environment and output additional warnings if needed
     # check_env(env)
-
+    # python train.py -na 2 -nr 2 -a 0.5 -m 10000 -d 10 -e 100000 -o C2_d10
     model = PPO("MlpPolicy", env, verbose=2)
     if args['input']:
         model = PPO.load(args['input'], env)
-    eval_callback = EvalCallback(env, best_model_save_path='./', eval_freq=10000,
-                                 deterministic=True, render=False)
-    model.learn(total_timesteps=args['TIMESTEPS'], callback=eval_callback)
-    os.rename('best_model.zip', fname+'.zip')
-    # model.save(fname)
+    # eval_callback = EvalCallback(env, best_model_save_path='./', eval_freq=10000,
+    #                              deterministic=True, render=False)
+    model.learn(total_timesteps=args['TIMESTEPS'])
+    # os.rename('best_model.zip', fname+'.zip')
+    model.save(fname)

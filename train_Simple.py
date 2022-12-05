@@ -5,7 +5,6 @@ from stable_baselines3 import *
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecMonitor
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.callbacks import EvalCallback
 
 import RoboticArmEnv_2Robots_Simple as RAE
 import time
@@ -59,8 +58,8 @@ if __name__ == '__main__':
     model = PPO("MlpPolicy", env, verbose=2)
     if args['input']:
         model = PPO.load(args['input'], env)
-    eval_callback = EvalCallback(env, best_model_save_path='./', eval_freq=10000/CORE,
-                                 deterministic=True, render=False)
+    # eval_callback = EvalCallback(env, best_model_save_path='./', eval_freq=10000/CORE,
+    #                              deterministic=True, render=False)
     # model.learn(total_timesteps=args['TIMESTEPS'], callback=eval_callback)
     model.learn(total_timesteps=args['TIMESTEPS'])
     # os.rename('best_model.zip', fname+'.zip')
