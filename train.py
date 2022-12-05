@@ -43,7 +43,7 @@ if __name__ == '__main__':
     print('JobID:', JobID)
 
     # Parallel environments
-    env = SubprocVecEnv([lambda: gym.make("RoboticArmEnv-v1")]*4)
+    env = SubprocVecEnv([lambda: gym.make("RoboticArmEnv-v1")]*32)
     env = VecMonitor(env, fname)
 
     # Single Threaded Env
