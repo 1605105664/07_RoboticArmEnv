@@ -13,7 +13,7 @@ def moving_average(values, window):
     return np.convolve(values, weights, 'valid')
 
 
-def plot_results(log_folder, x_axis='cum_timesteps',  y_axis='reward', window=10, label=None):
+def plot_results(log_folder, x_axis='cum_timesteps',  y_axis='reward', window=10, label=None, loc="lower right"):
     """
     plot the results
 
@@ -32,20 +32,24 @@ def plot_results(log_folder, x_axis='cum_timesteps',  y_axis='reward', window=10
     y = moving_average(y, window)
     # Truncate x
     x = x[len(x) - len(y):]
-    title=x_axis+' vs. '+y_axis
+    title=y_axis+' vs. '+x_axis
     fig = plt.figure(title)
     plt.plot(x, y, label=label)
     if label:
-        plt.legend(loc="lower right")
+        plt.legend(loc=loc, prop={'size': 20})
     plt.xlabel(x_axis)
     plt.ylabel(y_axis)
-    plt.title(title + " Smoothed, window=" + str(window))
+    plt.title(title + ", Smoothed over window of " + str(window))
 
 x='Episode Count'
 y='Episode Length'
-plot_results('./1_0', x_axis=x,  y_axis=y, window=100, label='alpha=0.0')
-plot_results('./1_25', x_axis=x,  y_axis=y, window=100, label='alpha=0.25')
-plot_results('./1_50', x_axis=x,  y_axis=y, window=100, label='alpha=0.5')
-plot_results('./1_75', x_axis=x,  y_axis=y, window=100, label='alpha=0.75')
-plot_results('./1_100', x_axis=x,  y_axis=y, window=100, label='alpha=1.0')
+window=1000
+plt.rcParams.update({'font.size': 22})
+plot_results('./', x_axis=x,  y_axis=y, window=window, label='Non-curriculum')
+plot_results('./clearn_opposite', x_axis=x,  y_axis=y, window=window, label='curriculum')
+# plot_results('./2_0', x_axis=x,  y_axis=y, window=window, label='alpha=0.0', loc="lower right")
+# plot_results('./2_25', x_axis=x,  y_axis=y, window=window, label='alpha=0.25', loc="lower right")
+# plot_results('./2_50', x_axis=x,  y_axis=y, window=window, label='alpha=0.5', loc="lower right")
+# plot_results('./2_75', x_axis=x,  y_axis=y, window=window, label='alpha=0.75', loc="lower right")
+# plot_results('./2_100', x_axis=x,  y_axis=y, window=window, label='alpha=1.0', loc="lower right")
 plt.show()
