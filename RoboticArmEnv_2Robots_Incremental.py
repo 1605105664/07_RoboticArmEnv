@@ -13,7 +13,7 @@ def bound(num):
 
 
 class RoboticArmEnv_V1(gym.Env):
-    def __init__(self, training=True, num_arms=2, num_robots=2, arm_length=10, arm_width=0.5, destSize=15, alpha_reward=0.5):
+    def __init__(self, training=True, num_arms=2, num_robots=2, arm_length=10, arm_width=0.5, destSize=5, alpha_reward=0.5):
         super().__init__()
         # Sim Parameters
         self.arm_length = arm_length
@@ -166,7 +166,7 @@ class RoboticArmEnv_V1(gym.Env):
         if self.num_robots == 1:
             self.dest = [0, self.arm_length, 0]
         elif self.num_robots == 2:
-            self.dest = [2*self.arm_length, self.arm_length/2, 0, -2*self.arm_length, self.arm_length/2, 0]
+            self.dest = [0, self.arm_length/2, -self.arm_length/2, 0, self.arm_length/2, self.arm_length/2]
         else:
             for r in range(self.num_robots):
                 destination_x = random.random()
